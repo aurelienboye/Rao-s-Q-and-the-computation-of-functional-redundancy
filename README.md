@@ -7,7 +7,7 @@ A. Boyé
 
 -----
 
- A clean version of what's below, with the equation properly printed, can be found [here](https://github.com/aurelienboye/Rao-s-Q-and-the-computation-of-functional-redundancy/Rao_redundancy.html). 
+ A clean version of what's below, with the equation properly printed, can be found [here](https://aurelienboye.github.io/Rao-s-Q-and-the-computation-of-functional-redundancy/Rao_redundancy.html). 
 
 -----
 
