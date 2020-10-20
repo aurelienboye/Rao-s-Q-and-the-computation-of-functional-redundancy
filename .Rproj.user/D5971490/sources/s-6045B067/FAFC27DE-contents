@@ -1,0 +1,315 @@
+---
+title: "Exploration of the different implementations of RaoQ: which one to use to compute functional redundancy indices ?"
+author: "A. Boyé"
+date: "12/03/2018, updated the `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  rmarkdown::html_document:
+    theme: sandstone
+    highlight: tango
+    toc: true
+    toc_depth: 2
+    toc_float: true
+# prettydoc::html_pretty:
+#    theme: cayman
+#    highlight: github
+#    toc: true # table of content true
+#    toc_depth: 5  # up to 5 depths of headings (specified by #, ## and ###)
+    number_sections: TRUE  # if you want number sections at each table header
+bibliography: biblio_rao.bib # bibliographie
+link-citations: true # Lien html pour les citations
+csl: ecology-letters.csl # Style de citation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=F, warning=T)
+```
+
+---
+
+# The different implementations of Rao's quadratic entropy in R
+
+## Package SYNCSA
+
+`rao.diversity` of the `SYNCSA` package uses the formula found in @rao1982, which is the most commonly cited version of this index [e.g. @botta2005rao; @ricotta2005; @leps2006] :
+
+$RaoQ = \sum \limits_{i=1}^{S-1} \sum \limits_{j=i+1}^S d_{ij} p_i p_j$
+
+with $d_{ij}$ the trait dissimilarity between species $i$ and $j$, and with $p_i$ and $p_j$ their relative abundance
+
+This `rao.diversity` function only uses relative abundances (**contrary to the `divc` function of ADE4** that can also use raw abundance; [see the code of the different functions](#code_details) and the help of [rao.diversity](https://www.rdocumentation.org/packages/SYNCSA/versions/1.3.2/topics/rao.diversity) and [divc](https://pbil.univ-lyon1.fr/ade4/ade4-html/divc.html)). 
+
+Also, `rao.diversity` the square-root of Gower's distance and therefore computes : 
+
+$RaoQ = \sum \limits_{i=1}^{S-1} \sum \limits_{j=i+1}^S \sqrt{d^{gower}_{ij}} p_i p_j$
+
+with $\sum \limits_{i=1}^S p_i = 1$
+
+> This transformation makes Gower's distance *metric*, and likely *euclidean* [follwoing @Legendre_Legendre2012, p . 297, S15]
+
+## Package FD
+
+The `dbFD` function from the `FD` package is based on the `divc` from the `ADE4` package that computes Rao's Q based on @Champely_Chessel_2002 formula : $RaoQ = \sum \limits_{i=1}^n \sum \limits_{j=1}^n p_i p_j \frac{(\delta_{ij})^2}{2}$
+
+The exact formula used in `divc` is : $RaoQ = \sum \limits_{i=1}^n \sum \limits_{j=1}^n p_i p_j \delta_{ij}^2 \times \frac{1}{2} \times \frac{1}{\sum p^2}$
+
+with $\sum p^2 = 1$ in the case of relative abundances
+
+> It is also possible in `divc` and `dbFD` to use raw abundances in which case **the influence of divinding by $\sum p^2$ is not clear to me**
+> 
+> In the book *Quantifying Functional Biodiversity*  [@pla2011] it is said p.40 
+that an unbiasied estimator of Rao's Q when using raw abundances would be :
+> 
+> $\hat{Rao} = \frac{n}{n-1} 2 \sum \limits_{i>j}^S d_{ij} \frac{n_i n_j}{n^2}$
+>
+> with $n_i$ the number of individuals of species $i$ and $n = \sum \limits_{i=1}^S n_i$ the total number of individuals
+>
+> This formula is close to the one found in @schleuter2010 [Table 1 Eq. 3.5] that defines Rao's Q according to @rao1982 and @Champely_Chessel_2002 as:
+>
+> $FD_Q = \sum \limits_{S \in S_c} \sum \limits_{S' \in S_c} \frac{A_sA_{s'}}{A^2} dist(s,s')$
+
+
+@Champely_Chessel_2002 and after them Pavoine [@pavoine2005_rao_dissim; @pavoine2005phd; @pavoine_bonsall2009; @pavoine2012] have adapted the original formula of @rao1982 as:
+
+$RaoQ = \sum \limits_{i=1}^n \sum \limits_{j=1}^n p_i p_j \frac{(\delta_{ij})^2}{2}$ for
+
+1) maximizing this function *i.e.* estimate the maximum value of $RaoQ$ possible for the set $p=(p_1...p_n), p_i \geqslant 0, \sum \limits_{ i=1}^n p_i=1$ [*e.g.* @Champely_Chessel_2002; @pavoine2005_rao_dissim; @pavoine_bonsall2009 ;@pavoine2012]
+
+2) Generalize Rao's Q and link its formulation to the one of the variance [@pavoine2005_rao_dissim; @pavoine2005phd *p. *51-54]
+
+
+@deBello2016rao noted that `divc` et `dbFD` express Rao's Q in terms of variance and that therefore **Simpson's index is not the maximum value possible for this version of Rao's Q** [which is expected from @rao1982 original formula when the dissimilarity all species pair is 1; @botta2005rao]. This is critical when measuring functional redundancy (see [Methods to compute functional redundancy](#redond)).
+
+> **@deBello2016rao**
+> 
+> Both the Simpson index and the Rao index can be computed with the “divc” function in the “ade4” package in R. The same function is also implemented in the widely used “dbFD” function in the “FD” package. However, this function computes trait variance by squaring dissimilar- ity values and dividing by two (de Bello et al. 2011). Consequently, it does not produce Rao as such, but a speci c case of Rao, expressed in terms of variance. We recall here that one of the properties expected from the Rao index that it is a generalization of Simpson, so that when all species are completely dissimilar (i.e., dij = 1 for every i and j), an ideal algorithm should provide Simpson diversity. Simpson diversity is obtained with “divc” only when dij = sqrt(2) for all species pairs, which does not seem intuitive and it is certainly not explained in the help function. In particular, the upper bound for Rao diversity (when the dissimilarity between all species pairs is equal to 1, i.e., dij = 1) with the “divc” function is half of the Simpson diversity, not the Simpson diversity obtained with Eqs. 2 and 3.
+
+However, the formula used in `divc` et `dbFD` allows to estimate the maximum value possible of Rao's Q (for a fixed dissimilarity matrix among species) and therefore allows to express Rao's Q as a relative value which might prove usefull when to compare samples that have important richness differences [@pla2011]
+
+> **@pla2011 p. 42-43**
+> 
+> The expression of quadratic entropy as an **absolute value is not useful when the comparisons have to be done between communities with very different numbers of species or when different sets of traits were used to define the distance matrix. To get a relative expression the maximum has to be estimated from the data. The distance matrix does not depend on the abundance of species and is fixed for a given set of species, but changes in the relative abundance of these species may lead to the maximum diversity index ($Rao_{max}$)**. There are two types of abundance vectors that define two subclasses of maximum: (a) weak maximization, when some of the $w_i$ abundances that maximize $Rao_{max}$ are zero; and (b) strong maximization, when all the $w_i$ values that maximize $Rao_{max}$ are positives.
+> 
+> The maximization process relies on the dissimilarity matrix and on any ultra-metric matrix that belongs to the strong subclass (Pavoine et al. 2005). The drawback arising from having only some species to maximize the Rao’s quadratic index when dissimilarity between species are based on functional traits is the absence of distance measures that guaranty the ultrametric condition and then ecological meaningful expression of the functional diversity using relative Rao index. Taxonomic or phylogenic dissimilarity trees may have ultrametric distances and give a maximum value of Rao that relies on total abundance distributed among all the species presents.
+
+## Other versions of Rao's Q in R
+
+### Package `picante`
+
+The `raoD` in the `picante` package seems to compute Rao's Q only with phylogenetic diversity ([see the package description](https://cran.r-project.org/web/packages/picante/picante.pdf)).
+
+It uses relative abundances but with a new and different formula from those introduced here before. This function expresses Rao's Q as an abundance-weighted version of the MPD (Mean Pairwise Distance). There is however a difference between the original formula of Rao's Q and this one in the way the dissimilarity of a species with itself (which could represent intra-specific trait variability) is handled [c.f. @deBello2016rao].
+
+> **Details** : 
+> 
+> $D_{kl}=\sum t_{ij} x_{ki} x_{lj}$ with $x_{ki}$ the relative abundance of species $i$ in the community $k$ and $t_{ij}$ the phylogenetic distance matrix ([see the code of the function](#code_details_raoD))
+
+### `melodic` from @deBello2016rao
+
+@deBello2016rao gives in the Supplementary a function (`melodic`) calculating both MPD and Rao's Q
+
+---
+
+# Behaviour of the `divc` and `rao.diversity` functions
+
+```{r, packages}
+# Packages 
+library(SYNCSA)
+library(FD)
+
+library(dplyr)
+library(magrittr)
+```
+
+## Difference between the two functions
+
+We use the `dummy` dataset from the examples of `dbFD`
+
+Rao's Q computed with `dbFD` on raw abundances
+
+```{r, results="hide"}
+# dbFD
+FD_raw <- dbFD(dummy$trait, dummy$abun, calc.FRic = FALSE)
+```
+
+Rao's Q computed with `dbFD` on relative abundances
+
+```{r, results="hide"}
+# dbFD
+abun_rel <- dummy$abun / rowSums(dummy$abun)
+
+FD_rel <- dbFD(dummy$trait, abun_rel, calc.FRic = FALSE)
+```
+
+Rao's Q computed with `divc` with both raw and relative abundances
+
+```{r}
+# On raw abundances
+divc_raw <- divc(as.data.frame(t(dummy$abun)),gowdis(dummy$trait))
+
+# On relative abundances
+divc_rel <- divc(as.data.frame(t(abun_rel)),gowdis(dummy$trait))
+
+```
+
+Rao's Q computed with `rao.diversity` with both raw and relative abundances 
+
+```{r}
+# On raw abundances
+SYN_raw <- rao.diversity(dummy$abun, dummy$trait)
+
+# On relative abundances
+SYN_rel <- rao.diversity(abun_rel, dummy$trait)
+```
+
+Comparison
+
+```{r}
+# dbFD raw abundances
+FD_raw$RaoQ
+
+#dbFD relative abundances
+FD_rel$RaoQ
+
+# divc raw abundances
+divc_raw
+
+# divc relative abundances
+divc_rel
+
+# SYNCSA (rao.diversity) raw abundances
+SYN_raw 
+
+# SYNCSA (rao.diversity) relative abundances
+SYN_rel
+```
+
+> **Summary**
+> 
+> - `divc` and `rao.diversity` give different results
+> - `divc`, `dbFD` and `rao.diversity` give the same results whether raw or relative abundances are used as input
+> - `divc` send back a warning: it needs the distance matrix to be euclidean
+>     - In contrast, the distance matrix is not always euclidean in `dbFD`  because it uses the uncorrected species-species distance matrix [see the help of `dbFD`](https://www.rdocumentation.org/packages/FD/versions/1.0-12/topics/dbFD)).
+  
+## Equality of RaoQ & Simpson when $d_{ij}=1$ 
+
+Rao's Q corresponds to the expected dissimilarity between two individuals drawn at random from the community and is the counterpart of **Simpson's diversity index** which is the probability for two individuals drawn at random to belong to to the same species. The Simpson index is thus equivalent to Rao's Q when all species are functionally completely different *i.e.* unique. Indeed if $d_{ij}=1$ for all $i \neq j$  then
+
+$RaoQ = \sum \limits_{i=1}^{S-1} \sum \limits_{j=i+1}^S d_{ij} p_i p_j$ 
+
+simplfies to Simpson's diversity index $1-\sum \limits_{i=1}^{S} p_i^2$ [@botta2005rao]
+
+@deBello2016rao noted that this is not true with the "variance"-formula used in `divc` et `dbFD`.
+
+<u> Verification: </u>
+
+```{r}
+# Create a distance matrix with all species-species distance equal to 1
+dist_sp<- 1-diag(8) %>%
+  # Add species names
+  set_rownames(rownames(dummy$trait)) %>%
+  # Transform into a distance amtrix
+  as.dist(.)
+
+dist_sp
+```
+
+```{r, results="hide"}
+# Computation with dbFD
+ex2_FD <- dbFD(dist_sp, dummy$abun, calc.FRic = FALSE)
+```
+
+```{r}
+ex2_FD$RaoQ
+
+# Test with rao.diversity
+#------------------
+
+# Create a trait matrix so that all Gower distances between species paires are equal to 1
+trait_sp <- as.data.frame(matrix(LETTERS[1:8],ncol=8,nrow=8)) %>%
+  # Add species names
+  set_rownames(rownames(dummy$trait))
+
+# Verification
+gowdis(trait_sp)
+
+# Computation with rao.diversity
+ex2_SYN <- rao.diversity(dummy$abun, trait_sp)
+ex2_SYN
+
+```
+
+> **Summary**
+> 
+> - As expected, only the `rao.diversity` function simplifies to Simpson's index when $d_{ij}=1$ while `dbFD` gives $Simpson~D \div 2$
+> 
+> This specificity of `divc` was highlighted in @deBello2016rao 
+
+---
+
+# Summary
+
+## Methods to compute functional redundancy {#redond}
+
+@ricotta2016 has summarized and analyzed the behavior of the different existing methods to measure redundancy. Some of them are based on the relationship between Rao's quadratic entropy and the Simpson diversity index such as:
+
+The functional redundancy of @deBello2007 :
+
+> $FRED = SIMD - RaoQ$  with SIMD Simpson's index $(1-D)$
+
+@deBello2016rao another index based on the *taxonomic distinctness* ($\Delta^*$) proposed by @warwick1995 express here in terms of Rao's Q and Simpson's index :
+
+> $\Delta^* = \frac{\sum \limits_{i \neq j} p_i p_j d_{ij}}{\sum \limits_{i \neq j} p_i p_j} = \frac{RaoQ}{SimD}$ 
+
+@vanderlinden2016 proposed another measure with these two indices :
+
+> $FRED = 1 - (\frac{RaoQ}{SIMD})$ 
+
+Finally, one new article of interest if you want to use functional redundancy indices is @GALLAND2020106488
+
+## Most appropriated function to compute Rao's Q in the context of functional redundancy ?
+
+The `rao.diversity` function appears as the most appropriate **to measure functional redundancy** as it allows for the equivalence between $RaoQ$ and $Simpson~D$ when species are all functionally unique [*c.f* @botta2005rao], which is essential to compare both indices when measuring redundancy. In this perspective, note that the formula mentioned in  @deBello2007 is indeed $RaoQ = \sum \limits_{i=1}^{S-1} \sum \limits_{j=i+1}^S d_{ij} p_i p_j$.
+
+## Additional comments
+
+Rao's Q could account for intra-specific variability by giving non-zero distances in the diagonal of species-species distance matrix [@deBello2016rao]
+
+> This index can be understood as the average of all dissimilarities in the dissimilarity matrix, including the diagonal (Online resource 1 in the ESM), which represents the dissimilarity between one species and itself (generally assumed to be zero in most existing approaches)
+
+It is also possible to **partition** Rao's Q to test for the effect of multiple factors (space, time, habitat...) in an ANOVA-like approach or an AMOVA-like approach for hierarchical structures [c.f. @rao2010; et @pavoine2012]
+
+> ANOQE has more potential than AMOVA. It can be employed to analyse nested, crossed, fixed, random or mixed factors, and has sev- eral ramifications allowing multivariate factorial analysis (Pavoine, Dufour & Chessel 2004; Pavoine & Bailly 2007) as well as decomposition of diversity across a taxonomic (Ricotta 2005) or phylogenetic (Pavoine, Love & Bonsall 2009; Pavoine, Baguette & Bonsall 2010) tree, all of which render the approach practical for use by biologists. Recently, Rao (2010) re-emphasised the importance that ANOQE is likely to have for future research on diversity. **[in @pavoine2012]
+
+---
+
+#  Code of the functions {#code_details}
+
+## `dbFD` et `divc`
+
+```{r dbFD}
+library(FD)
+
+divc
+
+dbFD
+
+```
+
+## `rao.diversity`
+
+```{r rao.diversity}
+library(SYNCSA)
+
+rao.diversity
+
+```
+
+## `raoD` {#code_details_raoD}
+
+```{r, raoD}
+library(picante)
+
+raoD
+```
+
+# References
