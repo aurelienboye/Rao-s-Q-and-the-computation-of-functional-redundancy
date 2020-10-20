@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1603192816440.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "493777181",
+    "id" : "1C16033D",
+    "lastKnownWriteTime" : 1603192796,
+    "last_content_update" : 1603192796,
+    "path" : "~/Documents/Boulot/Projets/2015_These/MARBEN/REBENT_trait_poly/05_Analysis-MS/00.1_Rao_redundancy/Rao_redundancy.Rmd",
+    "project_path" : "Rao_redundancy.Rmd",
+    "properties" : {
+        "cursorPosition" : "314,4",
+        "scrollLine" : "247"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

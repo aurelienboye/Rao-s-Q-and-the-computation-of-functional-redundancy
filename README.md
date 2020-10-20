@@ -1,8 +1,14 @@
 Exploration of the different implementations of RaoQ: which one to use
 to compute functional redundancy indices ?
+
 ================
+
 A. Boyé
 12/03/2018, updated the 20 octobre, 2020
+
+-----
+
+ A clean version of what's below, with the equation properly printed, can be found [here](https://github.com/aurelienboye/Rao-s-Q-and-the-computation-of-functional-redundancy/Rao_redundancy.html). 
 
 -----
 

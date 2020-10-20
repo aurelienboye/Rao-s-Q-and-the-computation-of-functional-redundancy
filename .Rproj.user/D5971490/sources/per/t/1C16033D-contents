@@ -3,15 +3,15 @@ title: "Exploration of the different implementations of RaoQ: which one to use t
 author: "A. Boyé"
 date: "12/03/2018, updated the `r format(Sys.time(), '%d %B, %Y')`"
 output:
-  github_document:
-    toc: true
-    toc_depth: 2
-#  rmarkdown::html_document:
-#    theme: sandstone
-#    highlight: tango
+#  github_document:
 #    toc: true
 #    toc_depth: 2
-#    toc_float: true
+  rmarkdown::html_document:
+    theme: sandstone
+    highlight: tango
+    toc: true
+    toc_depth: 2
+    toc_float: true
 # prettydoc::html_pretty:
 #    theme: cayman
 #    highlight: github

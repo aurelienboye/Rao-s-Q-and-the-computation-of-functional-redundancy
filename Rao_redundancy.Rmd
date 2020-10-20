@@ -3,6 +3,9 @@ title: "Exploration of the different implementations of RaoQ: which one to use t
 author: "A. Boyé"
 date: "12/03/2018, updated the `r format(Sys.time(), '%d %B, %Y')`"
 output:
+#  github_document:
+#    toc: true
+#    toc_depth: 2
   rmarkdown::html_document:
     theme: sandstone
     highlight: tango
@@ -14,7 +17,7 @@ output:
 #    highlight: github
 #    toc: true # table of content true
 #    toc_depth: 5  # up to 5 depths of headings (specified by #, ## and ###)
-    number_sections: TRUE  # if you want number sections at each table header
+#    number_sections: TRUE  # if you want number sections at each table header
 bibliography: biblio_rao.bib # bibliographie
 link-citations: true # Lien html pour les citations
 csl: ecology-letters.csl # Style de citation
