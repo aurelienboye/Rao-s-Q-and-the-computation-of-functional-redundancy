@@ -1,6 +1,5 @@
 Exploration of the different implementations of RaoQ: which one to use
 to compute functional redundancy indices ?
-
 ================
 
 A. Boyé
